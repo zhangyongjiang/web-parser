@@ -3,11 +3,14 @@ package com.zhmf5.mifangdaquan;
 import common.crawler.CrawlerBase;
 import common.crawler.Link;
 import common.crawler.PageException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.xava.server.contentservice.entity.Category;
 import org.xava.server.contentservice.entity.XDocument;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -23,12 +26,21 @@ public class MifangdaquanCrawler extends CrawlerBase {
     public void dump() throws Exception {
         List<Category> categories = getTopCategories();
         int cnt = 0;
+        ObjectMapper om = new ObjectMapper();
+        String base = "./src/main/resources/zhmf5/categories/";
         for(Category category : categories) {
+            String path = base+category.name;
+            File f = new File(path);
+            if(!f.exists())
+                f.mkdirs();
+
+            om.writeValue(new File(base + "/cat-" + category.name+".json"), category);
             setCacheResult(baseurl+category.url, category);
             List<XDocument> documents = getDocumentsForCategory(category);
             for(XDocument xd : documents) {
                 try {
                     XDocument details = getXdocumentDetails(xd);
+                    om.writeValue(new File(path+"/doc-"+xd.id+".json"), details);
                     cnt++;
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -42,6 +54,7 @@ public class MifangdaquanCrawler extends CrawlerBase {
         String url = xd.url;
         XDocument details = getDocumentDetailsFromUrl(url);
         details.id = xd.id;
+        details.title = xd.title;
         details.categoryId = xd.categoryId;
         details.url = xd.url;
         for(int i=2;;i++) {
@@ -105,7 +118,7 @@ public class MifangdaquanCrawler extends CrawlerBase {
         List<XDocument> documents = new ArrayList<XDocument>();
         for(Element e : elements) {
             XDocument doc = documentFromElememt(selectElement(e, "a"));
-            doc.id = UUID.randomUUID().toString();
+            doc.id = "000"+UUID.randomUUID().toString();
             doc.categoryId = categoryId;
             documents.add(doc);
         }
@@ -136,7 +149,7 @@ public class MifangdaquanCrawler extends CrawlerBase {
         List<Category> categories = new ArrayList<Category>();
         for(Element e : elements) {
             Category category = categoryFromElememt(e);
-            category.id = UUID.randomUUID().toString();
+            category.id = "000"+UUID.randomUUID().toString();
             if(category.url.indexOf("/mifangdaquan/")==-1)
                 continue;
             if(category.url.equals("/mifangdaquan/"))
