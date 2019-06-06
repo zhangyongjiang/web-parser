@@ -1,7 +1,6 @@
 package common.crawler;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +17,7 @@ import org.cyberneko.html.parsers.DOMParser;
 import org.dom4j.Element;
 import org.dom4j.Node;
 import org.dom4j.io.DOMReader;
+import org.dom4j.io.SAXReader;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
@@ -25,32 +25,87 @@ public class CrawlerBase {
 	private final Logger logger = Logger.getLogger(CrawlerBase.class);
 	
     protected DefaultHttpClient httpClient;
+
+    private String cachedir;
     
-    public CrawlerBase() {
-        this(1);
+    public CrawlerBase(String cachedir) {
+        this(1, cachedir);
     }
     
-    public CrawlerBase(int maxConnections) {
+    public CrawlerBase(int maxConnections, String cachedir) {
+        this.cachedir = cachedir;
         httpClient = new DefaultHttpClient();
+        if(!cachedir.endsWith("/"))
+            cachedir += "/";
+        File file = new File(cachedir);
+        if(!file.exists())
+            file.mkdirs();
     }
     
     public String getContent(String url) throws IOException {
+        String cached = getCached(url);
+        if(cached != null)
+            return cached;
         InputStream stream = new URL(url).openStream();
         String content = IOUtils.toString(stream);
+        setCache(url, content);
         return content;
     }
 
+    private String getFileNameForUrl(String url) {
+        return url.replaceAll("[^a-zA-Z0-9 -]", "");
+    }
+
+    private String getFilePathForUrl(String url) {
+        url = getFileNameForUrl(url);
+        if(url.length()<10)
+            return cachedir + "/" + url;
+        if(url.length()<20)
+            return cachedir + "/" + url.substring(0, 10) + "/" + url.substring(10);
+
+        return cachedir + "/" + url.substring(0, 10) + "/" + url.substring(10, 20) + '/' + url.substring(20);
+    }
+
+    private void setCache(String url, String content) throws IOException {
+        String path = getFilePathForUrl(url);
+        String dir = path.substring(0, path.lastIndexOf("/"));
+        File file = new File(dir);
+        if(!file.exists())
+            file.mkdirs();
+        FileWriter fw = new FileWriter(path);
+        fw.write(content);
+        fw.close();
+    }
+
+    private String getCached(String url) throws IOException {
+        String path = getFilePathForUrl(url);
+        File file = new File(path);
+        if(!file.exists())
+            return null;
+        System.err.println("=== found cache for " + url);
+        return IOUtils.toString(new FileReader(file));
+    }
+
     public String getContentFromUrl(String url) throws Exception {
+        String cache = getCached(url);
+        if(cache != null)
+            return cache;
         HttpGet get = new HttpGet(url);
         HttpResponse response = httpClient.execute(get);
         InputStream inputStream = response.getEntity().getContent();
         String content = IOUtils.toString(inputStream);
         inputStream.close();
+        setCache(url, content);
         return content;
     }
 
     public String getContentFromUrl(String url, String username, String password) throws Exception {
-    	String encoding = new Base64().encode((username + ":" + password).getBytes());
+        String cacheurl = url + username + password;
+        String cache = getCached(cacheurl);
+        if(cache != null)
+            return cache;
+
+        String encoding = new Base64().encode((username + ":" + password).getBytes());
 //    	httpGet.addHeader("Authorization", "Basic " + Base64.encodeToString((user + ":" + pwd).getBytes(), Base64.NO_WRAP));
         HttpGet get = new HttpGet(url);
     	get.setHeader("Authorization", "Basic " + encoding);
@@ -58,16 +113,26 @@ public class CrawlerBase {
         InputStream inputStream = response.getEntity().getContent();
         String content = IOUtils.toString(inputStream);
         inputStream.close();
+
+        setCache(cacheurl, content);
         return content;
     }
 
     public org.dom4j.Document getDocumentFromUrl(String url) throws Exception {
         try {
+            String cache = getCached(url);
+            if(cache != null) {
+                return getDocument(new ByteArrayInputStream(cache.getBytes()));
+            }
 	        HttpGet get = new HttpGet(url);
 	        HttpResponse response = httpClient.execute(get);
 	        InputStream inputStream = response.getEntity().getContent();
-	        org.dom4j.Document document = getDocument(inputStream);
+	        String content = IOUtils.toString(inputStream);
 	        inputStream.close();
+	        org.dom4j.Document document = getDocument(new ByteArrayInputStream(cache.getBytes()));
+	        inputStream.close();
+
+	        setCache(url, content);
 	        return document;
         } catch (Exception e) {
         	logger.error("cannot retrieve info from " + url);
@@ -76,15 +141,24 @@ public class CrawlerBase {
     }
 
     public org.dom4j.Document getDocument(String url) throws Exception {
+        String cache = getCached(url);
+        if(cache != null) {
+            SAXReader reader = new SAXReader();
+            return reader.read(new StringReader(cache));
+        }
+
         DOMParser parser = new DOMParser();
         parser.setFeature("http://xml.org/sax/features/namespaces", false);
         parser.parse(url);
         Document document = parser.getDocument();
         DOMReader reader = new DOMReader();
         org.dom4j.Document doc = reader.read(document);
+
+        String xml = doc.asXML();
+        setCache(url, xml);
         return doc;
     }
-    
+
     public org.dom4j.Document getDocument(InputStream is) throws Exception {
         DOMParser parser = new DOMParser();
         parser.setFeature("http://xml.org/sax/features/namespaces", false);
