@@ -1,10 +1,14 @@
-target/
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-.classpath
+/.classpath
 .project
 .settings
-src/main/search/community/data/
+/coverage-report/
+.idea
+*.iml
+
+## Gradle
+.gradle
+build/
+out/
+
+# Package Files #
+**/target

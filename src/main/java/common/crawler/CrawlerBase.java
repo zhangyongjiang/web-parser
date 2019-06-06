@@ -22,7 +22,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 public class CrawlerBase {
-	private static final Logger logger = Logger.getLogger(CrawlerBase.class);
+	private final Logger logger = Logger.getLogger(CrawlerBase.class);
 	
     protected DefaultHttpClient httpClient;
     
@@ -34,7 +34,7 @@ public class CrawlerBase {
         httpClient = new DefaultHttpClient();
     }
     
-    public static String getContent(String url) throws IOException {
+    public String getContent(String url) throws IOException {
         InputStream stream = new URL(url).openStream();
         String content = IOUtils.toString(stream);
         return content;
@@ -75,7 +75,7 @@ public class CrawlerBase {
         }
     }
 
-    public static org.dom4j.Document getDocument(String url) throws Exception {
+    public org.dom4j.Document getDocument(String url) throws Exception {
         DOMParser parser = new DOMParser();
         parser.setFeature("http://xml.org/sax/features/namespaces", false);
         parser.parse(url);
@@ -85,7 +85,7 @@ public class CrawlerBase {
         return doc;
     }
     
-    public static org.dom4j.Document getDocument(InputStream is) throws Exception {
+    public org.dom4j.Document getDocument(InputStream is) throws Exception {
         DOMParser parser = new DOMParser();
         parser.setFeature("http://xml.org/sax/features/namespaces", false);
         parser.parse(new InputSource(is));
@@ -95,42 +95,42 @@ public class CrawlerBase {
         return doc;
     }
     
-    public static List<Element> selectElements(org.dom4j.Node doc, String tag, String attrName, String attrValue) {
+    public List<Element> selectElements(org.dom4j.Node doc, String tag, String attrName, String attrValue) {
         return doc.selectNodes(".//" + tag.toUpperCase() + "[@" + attrName + "='" + attrValue + "']");
     }
     
-    public static List<Element> selectElements(org.dom4j.Node doc, String tag) {
+    public List<Element> selectElements(org.dom4j.Node doc, String tag) {
         return doc.selectNodes(".//" + tag.toUpperCase());
     }
     
-    public static Element selectElement(org.dom4j.Node doc, String tag, String attrName, String attrValue) {
+    public Element selectElement(org.dom4j.Node doc, String tag, String attrName, String attrValue) {
         return (Element) doc.selectSingleNode(".//" + tag.toUpperCase() + "[@" + attrName + "='" + attrValue + "']");
     }
     
-    public static Element selectElement(org.dom4j.Node doc, String tag) {
+    public Element selectElement(org.dom4j.Node doc, String tag) {
         return (Element) doc.selectSingleNode(".//" + tag.toUpperCase());
     }
     
-    public static Link getLink(Node node) {
+    public Link getLink(Node node) {
         return getLink((Element) node);
     }
     
-    public static String getImg(Element ell) {
+    public String getImg(Element ell) {
         return ell.attributeValue("src");
     }
     
-    public static String getImg(Node node) {
+    public String getImg(Node node) {
         return getImg((Element)node);
     }
     
-    public static Link getLink(Element ele) {
+    public Link getLink(Element ele) {
         Link link = new Link();
         link.title = ele.getStringValue().trim();
         link.href = ele.attributeValue("href");
         return link;
     }
     
-    public static String formatPhone(String phone) {
+    public String formatPhone(String phone) {
         if(phone == null || phone.trim().length() == 0)
             return null;
         phone = phone.replaceAll("[\\+\\.\\(\\) \\-]+", "");
@@ -160,7 +160,7 @@ public class CrawlerBase {
         return phone.length() > 11 ? phone.substring(0,11) : phone;
     }
 
-    public static String[] getStateAndZip(String stateZip) {
+    public String[] getStateAndZip(String stateZip) {
         stateZip = stateZip.toUpperCase().replaceAll("[^A-Z0-9]+", "");
         String[] sz = new String[2];
         sz[0] = stateZip.substring(0,2);
@@ -172,7 +172,7 @@ public class CrawlerBase {
         httpClient.getConnectionManager().shutdown();
     }
     
-    public static Map<String, String> getCityStateZip(String line) {
+    public Map<String, String> getCityStateZip(String line) {
         line = line.trim();
         
         Map<String, String> data = new HashMap<String, String>();
@@ -208,13 +208,13 @@ public class CrawlerBase {
         }
     }
 
-	public static String getText(Node node) {
+	public String getText(Node node) {
 		StringBuilder sb = new StringBuilder();
 		getText(node, sb);
 		return sb.toString().replaceAll("[ \t]+", " ").replaceAll("\n ", "\n").replaceAll("[\n]+", "\n");
 	}
 	
-	public static void getText(Node node, StringBuilder sb) {
+	public void getText(Node node, StringBuilder sb) {
 		if(node.getNodeType() == Node.ELEMENT_NODE) {
 			Element ele = (Element) node;
 			if(ele.isTextOnly()) {
@@ -230,13 +230,13 @@ public class CrawlerBase {
 		}
 	}
 	
-	public static void getText(List<Node> nodes, StringBuilder sb) {
+	public void getText(List<Node> nodes, StringBuilder sb) {
 		for(Node node : nodes) {
 			getText(node, sb);
 		}
 	}
 	
-	public static String getText(List<Node> nodes) {
+	public String getText(List<Node> nodes) {
 		StringBuilder sb = new StringBuilder();
 		getText(nodes, sb);
 		return sb.toString().replaceAll("[ \t]+", " ").replaceAll("\n ", "\n").replaceAll("[\n]+", "\n");
