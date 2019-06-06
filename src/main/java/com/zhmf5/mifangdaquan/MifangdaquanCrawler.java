@@ -28,10 +28,8 @@ public class MifangdaquanCrawler extends CrawlerBase {
             List<XDocument> documents = getDocumentsForCategory(category);
             for(XDocument xd : documents) {
                 try {
+                    XDocument details = getXdocumentDetails(xd);
                     cnt++;
-                    System.err.println(xd.url);
-                    continue;
-//                    XDocument details = getXdocumentDetails(xd);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -51,7 +49,6 @@ public class MifangdaquanCrawler extends CrawlerBase {
             try {
                 XDocument next = getDocumentDetailsFromUrl(url);
                 details.description += "\n" + next.description;
-                setCacheResult(baseurl+details.url, details);
             }
             catch (Exception e) {
                 System.err.println("set PageException " + url);
@@ -59,6 +56,7 @@ public class MifangdaquanCrawler extends CrawlerBase {
                 break;
             }
         }
+        setCacheResult(baseurl+details.url, details);
         return details;
     }
 
@@ -70,10 +68,13 @@ public class MifangdaquanCrawler extends CrawlerBase {
         Element element = selectElement(document, "div", "id", "Cnt-Main-Article-QQ");
         List<Element> elements = selectElements(element, "p");
         for(Element e : elements) {
+            String txt = getText(e).replaceAll("[\\n\\r]+", "");
+            if(txt.contains("还有下一页"))
+                break;
             if(xd.description == null)
-                xd.description = e.getTextTrim();
+                xd.description = txt;
             else
-                xd.description += "\n" + e.getTextTrim();
+                xd.description += "\n" + txt;
         }
         System.err.println(xd.description);
         return xd;
@@ -148,5 +149,6 @@ public class MifangdaquanCrawler extends CrawlerBase {
     public static void main(String[] args) throws Exception {
         MifangdaquanCrawler crawler = new MifangdaquanCrawler("/Users/zhangk5/Documents/bsc/projects/gaoshin/documents/zhmf5.com/mifangdaquan");
         crawler.dump();
+//        crawler.getDocumentDetailsFromUrl("/2011/02/4960_2.html");
     }
 }

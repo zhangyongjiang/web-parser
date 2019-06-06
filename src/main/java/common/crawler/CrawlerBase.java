@@ -142,7 +142,7 @@ public class CrawlerBase {
             SAXReader reader = new SAXReader();
             return reader.read(new StringReader(cache));
         }
-
+        Thread.sleep(2000);
         DOMParser parser = new DOMParser();
         parser.setFeature("http://xml.org/sax/features/namespaces", false);
         parser.parse(url);
@@ -288,7 +288,7 @@ public class CrawlerBase {
 		if(node.getNodeType() == Node.ELEMENT_NODE) {
 			Element ele = (Element) node;
 			if(ele.isTextOnly()) {
-				sb.append(ele.getTextTrim()).append("\n");
+				sb.append(ele.getTextTrim().replaceAll("[\\n\\r]+", "")).append("\n");
 			}
 			else {
 				List contents = ele.content();
