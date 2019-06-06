@@ -9,4 +9,5 @@ public class Category {
     public String parentCategoryId;
     public String publisherId;
     public String applicationId;
+    public String url;
 }

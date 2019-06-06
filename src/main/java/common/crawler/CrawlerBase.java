@@ -13,6 +13,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.cyberneko.html.parsers.DOMParser;
 import org.dom4j.Element;
 import org.dom4j.Node;
@@ -42,7 +43,7 @@ public class CrawlerBase {
             file.mkdirs();
     }
     
-    public String getContent(String url) throws IOException {
+    public String getContent(String url) throws IOException, PageException {
         String cached = getCached(url);
         if(cached != null)
             return cached;
@@ -66,7 +67,7 @@ public class CrawlerBase {
         return cachedir + "/" + url.substring(0, 10) + "/" + url.substring(10, 20) + '/' + url.substring(20);
     }
 
-    private void setCache(String url, String content) throws IOException {
+    protected void setCache(String url, String content) throws IOException {
         String path = getFilePathForUrl(url);
         String dir = path.substring(0, path.lastIndexOf("/"));
         File file = new File(dir);
@@ -77,13 +78,30 @@ public class CrawlerBase {
         fw.close();
     }
 
-    private String getCached(String url) throws IOException {
+    ObjectMapper objectMapper = new ObjectMapper();
+    protected void setCacheResult(String url, Object content) throws IOException {
+        String path = getFilePathForUrl(url);
+        String dir = path.substring(0, path.lastIndexOf("/"));
+        File file = new File(dir);
+        if(!file.exists())
+            file.mkdirs();
+        FileWriter fw = new FileWriter(path+".json");
+        fw.write(objectMapper.writeValueAsString(content));
+        fw.close();
+    }
+
+    protected String getCached(String url) throws IOException, PageException {
         String path = getFilePathForUrl(url);
         File file = new File(path);
         if(!file.exists())
             return null;
         System.err.println("=== found cache for " + url);
-        return IOUtils.toString(new FileReader(file));
+        String cache = IOUtils.toString(new FileReader(file));
+        if(PageException.class.getSimpleName().equals(cache)) {
+            System.err.println("=== PageException " + url);
+            throw new PageException();
+        }
+        return cache;
     }
 
     public String getContentFromUrl(String url) throws Exception {
@@ -116,28 +134,6 @@ public class CrawlerBase {
 
         setCache(cacheurl, content);
         return content;
-    }
-
-    public org.dom4j.Document getDocumentFromUrl(String url) throws Exception {
-        try {
-            String cache = getCached(url);
-            if(cache != null) {
-                return getDocument(new ByteArrayInputStream(cache.getBytes()));
-            }
-	        HttpGet get = new HttpGet(url);
-	        HttpResponse response = httpClient.execute(get);
-	        InputStream inputStream = response.getEntity().getContent();
-	        String content = IOUtils.toString(inputStream);
-	        inputStream.close();
-	        org.dom4j.Document document = getDocument(new ByteArrayInputStream(cache.getBytes()));
-	        inputStream.close();
-
-	        setCache(url, content);
-	        return document;
-        } catch (Exception e) {
-        	logger.error("cannot retrieve info from " + url);
-        	throw e;
-        }
     }
 
     public org.dom4j.Document getDocument(String url) throws Exception {
