@@ -1,0 +1,30 @@
+version: '3.6'
+
+services:
+
+  xava-db:
+    image: pianfang-xava-db:${TAG}
+    networks:
+      - pianfang-network
+
+  xava-search:
+    image: pianfang-xava-search:${TAG}
+    ports: 
+      - 8983:8983
+    networks:
+      - pianfang-network
+
+  xava-server:
+    image: pianfang-xava-server:${TAG}
+    depends_on:
+      - xava-db
+      - xava-search
+    ports:
+      - 8080:8080
+    environment:
+      - spring.profiles.active=docker
+    networks:
+      - pianfang-network
+
+networks:
+  pianfang-network: 

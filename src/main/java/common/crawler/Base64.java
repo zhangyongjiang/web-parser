@@ -369,7 +369,7 @@ public class Base64
    }
 
    /**
-    * used to disable test driver
+    * used to disable getChapter driver
     */
    private static final boolean debug = false;
 
@@ -398,7 +398,7 @@ public class Base64
       }
 
    /**
-     * test driver
+     * getChapter driver
     */
    public static void main(String[] args)
       {

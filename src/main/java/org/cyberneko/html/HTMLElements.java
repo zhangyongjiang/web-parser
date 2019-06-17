@@ -735,7 +735,7 @@ public class HTMLElements {
 
         /**
          * Indicates if the provided element is an accepted parent of current element
-         * @param element the element to test for "paternity"
+         * @param element the element to getChapter for "paternity"
          * @return <code>true</code> if <code>element</code> belongs to the {@link #parent}
          */
 		public boolean isParent(final Element element) {

@@ -13,6 +13,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.log4j.Logger;
+import org.apache.xerces.xni.parser.XMLInputSource;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.cyberneko.html.parsers.DOMParser;
 import org.dom4j.Element;
@@ -90,6 +91,15 @@ public class CrawlerBase {
         fw.close();
     }
 
+    protected String getCachedFilePath(String url) throws IOException, PageException {
+        String path = getFilePathForUrl(url);
+        File file = new File(path);
+        if (!file.exists()) {
+            return null;
+        }
+        return path;
+    }
+
     protected String getCached(String url) throws IOException, PageException {
         String path = getFilePathForUrl(url);
         File file = new File(path);
@@ -134,6 +144,30 @@ public class CrawlerBase {
 
         setCache(cacheurl, content);
         return content;
+    }
+
+    public org.dom4j.Document getDocument(String url, String encoding) throws Exception {
+        String cache = getCached(url);
+        if(cache == null) {
+            URL u = new URL(url);
+            InputStream inputStream = u.openStream();
+            cache = IOUtils.toString(inputStream, encoding);
+            cache = cache.replaceAll("gb2312", "gbk");
+            setCache(url, cache);
+        }
+        DOMParser parser = new DOMParser();
+        parser.setFeature("http://xml.org/sax/features/namespaces", false);
+
+        InputSource inputSource = new InputSource(new StringReader(cache));
+        parser.parse(inputSource);
+
+        Document document = parser.getDocument();
+        DOMReader reader = new DOMReader();
+        org.dom4j.Document doc = reader.read(document);
+
+        String xml = doc.asXML();
+        setCache(url, xml);
+        return doc;
     }
 
     public org.dom4j.Document getDocument(String url) throws Exception {
