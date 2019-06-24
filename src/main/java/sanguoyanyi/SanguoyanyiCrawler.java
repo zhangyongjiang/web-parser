@@ -1,20 +1,27 @@
 package sanguoyanyi;
 
 import common.crawler.CrawlerBase;
+import org.apache.commons.io.FileUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import org.xava.server.contentservice.entity.XDocument;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.StringReader;
 
 public class SanguoyanyiCrawler extends CrawlerBase {
-    private String baseurl = "http://www.zhmf5.com";
+    private String bookName;
+    private String webdir;
+    private int chapters;
 
-    public SanguoyanyiCrawler(String cachedir) {
-        super(cachedir);
+    public SanguoyanyiCrawler(String bookName, String webdir, int chapters) {
+        super("/Users/zhangk5/Documents/bsc/projects/gaoshin/documents/"+webdir);
+        this.bookName = bookName;
+        this.webdir = webdir;
+        this.chapters = chapters;
     }
 
     public XDocument getChapter(String url) throws Exception {
@@ -22,7 +29,7 @@ public class SanguoyanyiCrawler extends CrawlerBase {
         Document doc = getDocument(url, "gbk");
         Element titleElem = selectElement(doc, "title");
         String title = titleElem.getTextTrim()
-                .replaceAll("《三国演义》", "")
+                .replaceAll("《" + bookName + "》", "")
                 .replaceAll("\\(纯文学网站\\)", "")
                 .trim();
         xd.title = title;
@@ -45,10 +52,13 @@ public class SanguoyanyiCrawler extends CrawlerBase {
     }
 
     public void dump() throws Exception {
-        String base = "./src/main/三国演义/";
+        String base = "./src/main/zhongguowenxue/小说/"+bookName+"/";
         ObjectMapper om = new ObjectMapper();
-        for(int i=1; i<=120; i++) {
-            String url = String.format("http://www.purepen.com/sgyy/%03d.htm", i);
+        File dir = new File(base);
+        if(!dir.exists())
+            dir.mkdirs();
+        for(int i=1; i<=chapters; i++) {
+            String url = String.format("http://www.purepen.com/%s/%03d.htm", webdir, i);
             XDocument xd = getChapter(url);
             xd.title = String.format("%03d %s", i, xd.title);
             FileWriter fw = new FileWriter(base + xd.title);
@@ -57,8 +67,10 @@ public class SanguoyanyiCrawler extends CrawlerBase {
     }
 
     public static void main(String[] args) throws Exception {
-        SanguoyanyiCrawler crawler = new SanguoyanyiCrawler("/Users/zhangk5/Documents/bsc/projects/gaoshin/documents/sanguoyanyi");
-//        crawler.getChapter("http://www.purepen.com/sgyy/001.htm");
+//        SanguoyanyiCrawler crawler = new SanguoyanyiCrawler("三国演义","sgyy", 120);
+//        SanguoyanyiCrawler crawler = new SanguoyanyiCrawler("红楼梦","hlm", 120);
+//        SanguoyanyiCrawler crawler = new SanguoyanyiCrawler("西游记","xyj", 100);
+        SanguoyanyiCrawler crawler = new SanguoyanyiCrawler("水浒传","shz", 120);
         crawler.dump();
     }
 }
