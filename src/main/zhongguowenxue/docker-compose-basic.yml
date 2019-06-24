@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+
+  xava-db:
+    image: xava-db:${TAG}
+
+  xava-search:
+    image: xava-search:${TAG}
+    ports: 
+      - 8983:8983
+
+  xava-server:
+    image: xava-server:${TAG}
+    depends_on:
+      - xava-db
+      - xava-search
+    ports:
+      - 8080:8080
+    environment:
+      - spring.profiles.active=docker

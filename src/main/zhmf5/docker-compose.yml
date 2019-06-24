@@ -3,19 +3,19 @@ version: '3.6'
 services:
 
   xava-db:
-    image: pianfang-xava-db:${TAG}
+    image: zhangyongjiang/pianfang-xava-db:${TAG}
     networks:
       - pianfang-network
 
   xava-search:
-    image: pianfang-xava-search:${TAG}
+    image: zhangyongjiang/pianfang-xava-search:${TAG}
     ports: 
       - 8983:8983
     networks:
       - pianfang-network
 
   xava-server:
-    image: pianfang-xava-server:${TAG}
+    image: zhangyongjiang/pianfang-xava-server:${TAG}
     depends_on:
       - xava-db
       - xava-search

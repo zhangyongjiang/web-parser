@@ -1,0 +1,30 @@
+version: '3.6'
+
+services:
+
+  xava-db:
+    image: zhangyongjiang/zhongguowenxue-xava-db:${TAG}
+    networks:
+      - zhongguowenxue-network
+
+  xava-search:
+    image: zhangyongjiang/zhongguowenxue-xava-search:${TAG}
+    ports: 
+      - 8983:8983
+    networks:
+      - zhongguowenxue-network
+
+  xava-server:
+    image: zhangyongjiang/zhongguowenxue-xava-server:${TAG}
+    depends_on:
+      - xava-db
+      - xava-search
+    ports:
+      - 8080:8080
+    environment:
+      - spring.profiles.active=docker
+    networks:
+      - zhongguowenxue-network
+
+networks:
+  zhongguowenxue-network: 
